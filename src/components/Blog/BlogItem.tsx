@@ -3,51 +3,88 @@ import type { BlogItem } from '@/types/blogItem';
 import Image from 'next/image';
 import Link from 'next/link';
 
-const BlogItem = ({ blog }: { blog: BlogItem }) => {
+const BlogItemComponent = ({ blog }: { blog: BlogItem }) => {
+    // Parse image array từ string JSON
+    const getImageSrc = () => {
+        try {
+            if (!blog.image) return '/images/noImage/waiting.png';
+            const images = JSON.parse(blog.image);
+            return images[0] || '/images/noImage/waiting.png';
+        } catch {
+            return '/images/noImage/waiting.png';
+        }
+    };
+
+    // Format date
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('vi-VN', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+        });
+    };
+
+    // Get excerpt from HTML content
+    const getExcerpt = (htmlContent: string, maxLength: number = 150) => {
+        // Decode HTML entities
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = htmlContent;
+        const text = tempDiv.textContent || tempDiv.innerText || '';
+
+        return text.length > maxLength
+            ? text.substring(0, maxLength) + '...'
+            : text;
+    };
+
     return (
-        <div className="shadow-1 bg-white rounded-xl px-4 sm:px-5 pt-5 pb-4">
+        <div className="group">
             <Link
-                href="/blogs/blog-details"
-                className="rounded-md overflow-hidden"
+                href={`/blogs/blog-details?id=${blog.id}`}
+                className="block overflow-hidden rounded-[10px] mb-5 relative h-[220px]"
             >
                 <Image
-                    src={blog.img}
-                    alt="blog"
-                    className="rounded-md w-full"
-                    width={330}
-                    height={210}
+                    src={getImageSrc()}
+                    alt={blog.title}
+                    className="rounded-md w-full h-full object-cover transition-transform duration-300 ease-out "
+                    width={160}
+                    height={160}
+                    unoptimized={getImageSrc().startsWith('http')}
                 />
             </Link>
 
             <div className="mt-5.5">
                 <span className="flex items-center gap-3 mb-2.5">
-                    <a
-                        href="#"
-                        className="text-custom-sm ease-out duration-200 hover:text-blue"
-                    >
-                        {blog.date}
-                    </a>
+                    <span className="text-custom-sm text-gray-500">
+                        {formatDate(blog.createdOn)}
+                    </span>
 
-                    {/* <!-- divider --> */}
+                    {/* divider */}
                     <span className="block w-px h-4 bg-gray-4"></span>
 
-                    <a
-                        href="#"
-                        className="text-custom-sm ease-out duration-200 hover:text-blue"
-                    >
-                        {blog.views} Views
-                    </a>
+                    <span className="text-custom-sm text-gray-500">
+                        {blog.createdbyStr}
+                    </span>
                 </span>
 
-                <h2 className="font-medium text-dark text-lg sm:text-xl ease-out duration-200 mb-4 hover:text-blue">
-                    <Link href="/blogs/blog-details">{blog.title}</Link>
-                </h2>
+                <h4>
+                    <Link
+                        href={`/blogs/blog-details?id=${blog.id}`}
+                        className="inline-block font-medium text-dark text-base sm:text-lg lg:text-xl hover:text-blue ease-out duration-200"
+                    >
+                        {blog.title}
+                    </Link>
+                </h4>
+
+                <p className="text-sm text-gray-600 mb-4 line-clamp-3">
+                    {getExcerpt(blog.content)}
+                </p>
 
                 <Link
-                    href="/blogs/blog-details"
+                    href={`/blogs/blog-details?id=${blog.id}`}
                     className="text-custom-sm inline-flex items-center gap-2 py-2 ease-out duration-200 hover:text-blue"
                 >
-                    Read More
+                    Đọc thêm
                     <svg
                         className="fill-current"
                         width="18"
@@ -69,4 +106,4 @@ const BlogItem = ({ blog }: { blog: BlogItem }) => {
     );
 };
 
-export default BlogItem;
+export default BlogItemComponent;

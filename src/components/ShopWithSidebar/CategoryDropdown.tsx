@@ -1,26 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import api from '@/axios/api';
 
-const CategoryItem = ({ category }) => {
-    const [selected, setSelected] = useState(false);
+const CategoryItem = ({ category, isSelected, onToggle }) => {
     return (
         <button
             className={`${
-                selected && 'text-blue'
+                isSelected && 'text-blue'
             } group flex items-center justify-between ease-out duration-200 hover:text-blue `}
-            onClick={() => setSelected(!selected)}
+            onClick={() => onToggle(category.id)}
         >
             <div className="flex items-center gap-2">
                 <div
                     className={`cursor-pointer flex items-center justify-center rounded w-4 h-4 border ${
-                        selected
+                        isSelected
                             ? 'border-blue bg-blue'
                             : 'bg-white border-gray-3'
                     }`}
                 >
                     <svg
-                        className={selected ? 'block' : 'hidden'}
+                        className={isSelected ? 'block' : 'hidden'}
                         width="10"
                         height="10"
                         viewBox="0 0 10 10"
@@ -37,22 +37,50 @@ const CategoryItem = ({ category }) => {
                     </svg>
                 </div>
 
-                <span>{category.name}</span>
+                <span>{category.categoryName}</span>
             </div>
-
-            <span
-                className={`${
-                    selected ? 'text-white bg-blue' : 'bg-gray-2'
-                } inline-flex rounded-[30px] text-custom-xs px-2 ease-out duration-200 group-hover:text-white group-hover:bg-blue`}
-            >
-                {category.products}
-            </span>
         </button>
     );
 };
 
-const CategoryDropdown = ({ categories }) => {
+const CategoryDropdown = ({ selectedCategories, onCategoryChange }) => {
     const [toggleDropdown, setToggleDropdown] = useState(true);
+    const [categories, setCategories] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                setLoading(true);
+                const response = await api.get('/api/Category/Client', {
+                    params: {
+                        page: 1,
+                        pageSize: 100,
+                    },
+                });
+                if (response.data.success) {
+                    // Chỉ lấy các category cha (parentId === null)
+                    const parentCategories = response.data.result.items.filter(
+                        cat => cat.parentId === null
+                    );
+                    setCategories(parentCategories);
+                }
+            } catch (error) {
+                console.error('Error fetching categories:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchCategories();
+    }, []);
+
+    const handleToggle = categoryId => {
+        const newSelected = selectedCategories.includes(categoryId)
+            ? selectedCategories.filter(id => id !== categoryId)
+            : [...selectedCategories, categoryId];
+        onCategoryChange(newSelected);
+    };
 
     return (
         <div className="bg-white shadow-1 rounded-lg">
@@ -90,16 +118,34 @@ const CategoryDropdown = ({ categories }) => {
                 </button>
             </div>
 
-            {/* dropdown && 'shadow-filter */}
-            {/* <!-- dropdown menu --> */}
+            {/* dropdown menu */}
             <div
-                className={`flex-col gap-3 py-6 pl-6 pr-5.5 ${
+                className={`flex-col gap-3 py-6 pl-6 pr-5.5 max-h-[400px] overflow-y-auto ${
                     toggleDropdown ? 'flex' : 'hidden'
                 }`}
+                style={{
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: '#3b82f6 #f1f1f1',
+                }}
             >
-                {categories.map((category, key) => (
-                    <CategoryItem key={key} category={category} />
-                ))}
+                {loading ? (
+                    <p className="text-sm text-gray-500">Đang tải...</p>
+                ) : categories.length > 0 ? (
+                    categories.map(category => (
+                        <CategoryItem
+                            key={category.id}
+                            category={category}
+                            isSelected={selectedCategories.includes(
+                                category.id
+                            )}
+                            onToggle={handleToggle}
+                        />
+                    ))
+                ) : (
+                    <p className="text-sm text-gray-500">
+                        Không có danh mục nào
+                    </p>
+                )}
             </div>
         </div>
     );

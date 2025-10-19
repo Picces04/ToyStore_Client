@@ -2,6 +2,7 @@
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { useCallback, useRef, useEffect, useState } from 'react';
 import Image from 'next/image';
+import api from '../../../axios/api'; // Import file api.js đã cấu hình axios
 
 // Import Swiper styles
 import 'swiper/css/navigation';
@@ -18,14 +19,16 @@ const Categories = () => {
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                const response = await fetch(
-                    'https://6854cb2b6a6ef0ed66301104.mockapi.io/category'
-                );
-                if (!response.ok) {
-                    throw new Error('Failed to fetch categories');
+                const response = await api.get('/api/Category/Client'); // Gọi API bằng axios từ api.js
+                if (response.data.success) {
+                    // Lọc danh mục cha (parentId: null)
+                    const parentCategories = response.data.result.items.filter(
+                        item => item.parentId === null
+                    );
+                    setCategories(parentCategories);
+                } else {
+                    throw new Error('API response unsuccessful');
                 }
-                const data = await response.json();
-                setCategories(data);
             } catch (err) {
                 setError(err.message);
             } finally {
@@ -52,15 +55,15 @@ const Categories = () => {
         }
     }, [categories]); // Re-init Swiper after data loads
 
-    if (loading) {
-        return (
-            <div className="overflow-hidden pt-17.5">Loading categories...</div>
-        );
-    }
+    // if (loading) {
+    //     return (
+    //         <div className="overflow-hidden pt-17.5">Loading categories...</div>
+    //     );
+    // }
 
-    if (error) {
-        return <div className="overflow-hidden pt-17.5">Error: {error}</div>;
-    }
+    // if (error) {
+    //     return <div className="overflow-hidden pt-17.5">Error: {error}</div>;
+    // }
 
     return (
         <section className="overflow-hidden pt-17.5">
@@ -110,7 +113,7 @@ const Categories = () => {
                                 </svg>
                                 Danh mục
                             </span>
-                            <h2 className="font-semibold text-xl xl:text-heading-5 text-dark">
+                            <h2 className="font-semibold text-xl xl:text-heading-5 text-dark capitalize">
                                 Tìm kiếm nhiều nhất
                             </h2>
                         </div>
@@ -179,7 +182,7 @@ const Categories = () => {
                         }}
                     >
                         {categories.map((item, key) => (
-                            <SwiperSlide key={key}>
+                            <SwiperSlide className="!w-[200px]" key={key}>
                                 <SingleItem item={item} />
                             </SwiperSlide>
                         ))}

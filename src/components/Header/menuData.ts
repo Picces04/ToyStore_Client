@@ -17,7 +17,7 @@ export const menuData: Menu[] = [
         id: 3,
         title: 'Thương hiệu',
         newTab: false,
-        path: '/shop-with-sidebar',
+        path: '/shop-details',
     },
     {
         id: 4,

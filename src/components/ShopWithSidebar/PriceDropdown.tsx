@@ -1,14 +1,32 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import RangeSlider from 'react-range-slider-input';
 import 'react-range-slider-input/dist/style.css';
 
-const PriceDropdown = () => {
+const PriceDropdown = ({ priceRange, onPriceChange }) => {
     const [toggleDropdown, setToggleDropdown] = useState(true);
-
     const [selectedPrice, setSelectedPrice] = useState({
-        from: 0,
-        to: 5000000,
+        from: priceRange?.from || 0,
+        to: priceRange?.to || 5000000,
     });
+
+    useEffect(() => {
+        setSelectedPrice({
+            from: priceRange?.from || 0,
+            to: priceRange?.to || 5000000,
+        });
+    }, [priceRange]);
+
+    const handlePriceChange = ([from, to]) => {
+        const newPrice = {
+            from: Math.floor(from),
+            to: Math.ceil(to),
+        };
+        setSelectedPrice(newPrice);
+    };
+
+    const handleApplyPrice = () => {
+        onPriceChange(selectedPrice);
+    };
 
     return (
         <div className="bg-white shadow-1 rounded-lg">
@@ -54,12 +72,7 @@ const PriceDropdown = () => {
                             max={5000000}
                             step={50000}
                             value={[selectedPrice.from, selectedPrice.to]}
-                            onInput={([from, to]) =>
-                                setSelectedPrice({
-                                    from: Math.floor(from),
-                                    to: Math.ceil(to),
-                                })
-                            }
+                            onInput={handlePriceChange}
                         />
 
                         <div className="price-amount flex items-center justify-between pt-4">
@@ -91,6 +104,13 @@ const PriceDropdown = () => {
                                 </span>
                             </div>
                         </div>
+
+                        <button
+                            onClick={handleApplyPrice}
+                            className="w-full mt-4 py-2 bg-blue text-white rounded-md hover:bg-blue/90 transition-colors"
+                        >
+                            Áp dụng
+                        </button>
                     </div>
                 </div>
             </div>

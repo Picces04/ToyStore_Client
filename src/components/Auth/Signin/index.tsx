@@ -5,25 +5,51 @@ import Link from 'next/link';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '../../../axios/api';
+import { useAppContext } from '@/app/context/AppContext';
 
 const Signin = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
     const router = useRouter();
+    const { setUser } = useAppContext();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError('');
+        setLoading(true);
+
         try {
             const response = await api.post('/api/Auth/sign-in', {
                 username,
                 password,
             });
-            // Extract accessToken from the API response
-            localStorage.setItem('token', response.data.result.accessToken);
-            // router.push('/my-account'); // Redirect to dashboard or desired page after successful login
-        } catch (error) {
+
+            if (response.data.success) {
+                const { accessToken, expires, user } = response.data.result;
+
+                // Save token to localStorage
+                localStorage.setItem('token', accessToken);
+                localStorage.setItem('tokenExpiry', expires);
+
+                // Save user to localStorage and context
+                localStorage.setItem('user', JSON.stringify(user));
+                setUser(user);
+
+                // Redirect to home page
+                router.push('/');
+            } else {
+                setError('Đăng nhập không thành công. Vui lòng thử lại.');
+            }
+        } catch (error: any) {
             console.error('Login failed', error);
-            // You can add error handling like displaying a message here
+            const errorMessage =
+                error.response?.data?.message ||
+                'Đăng nhập thất bại. Vui lòng kiểm tra thông tin đăng nhập.';
+            setError(errorMessage);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -40,6 +66,12 @@ const Signin = () => {
                         </div>
 
                         <div>
+                            {error && (
+                                <div className="mb-5 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+                                    {error}
+                                </div>
+                            )}
+
                             <form onSubmit={handleSubmit}>
                                 <div className="mb-5">
                                     <label
@@ -84,9 +116,12 @@ const Signin = () => {
 
                                 <button
                                     type="submit"
-                                    className="w-full flex justify-center font-medium text-white bg-dark py-3 px-6 rounded-lg ease-out duration-200 hover:bg-blue mt-7.5"
+                                    disabled={loading}
+                                    className="w-full flex justify-center font-medium text-white bg-dark py-3 px-6 rounded-lg ease-out duration-200 hover:bg-blue mt-7.5 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    Đăng nhập
+                                    {loading
+                                        ? 'Đang đăng nhập...'
+                                        : 'Đăng nhập'}
                                 </button>
 
                                 <a
